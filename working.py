@@ -21,7 +21,12 @@ args = parser.parse_args()
 
 def parse_url(url):
     """removes 'shtml' and replace it with 'json'"""
-    # TODO
+    if search('json', url):
+        return url
+    elif search('shtml', url):
+        return sub('shtml', 'json', url)
+    else:
+        raise AttributeError("This tool only takes a url to a BOM weather observations page, for example http://www.bom.gov.au/products/IDQ60801/IDQ60801.94294.shtml")
     return url
 
 
