@@ -31,17 +31,30 @@ file_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(console_handler)
 
+logger.debug("======")
+
+def log(func):
+    """Adds debugging log information"""
+    def wrapper(*args, **kwargs):
+        logger.debug("calling %s" % func.__name__)
+        return func(*args, **kwargs)
+    return wrapper
+
+@log
 def parse_url(url):
     """removes 'shtml' and replace it with 'json'"""
+    logger.debug("recieved %s" % url)
     if search('json', url):
+        logger.debug("url looks like json. %s returning as is" % parse_url.__name__)
         return url
     elif search('shtml', url):
+        logger.debug("url looks like shtml. subing for json...")
         return sub('shtml', 'json', url)
     else:
         raise AttributeError("This tool only takes a url to a BOM weather observations page, for example http://www.bom.gov.au/products/IDQ60801/IDQ60801.94294.shtml")
-    return url
 
 
+# @log
 def get_rolling_average(list_of_30m_observations, hours):
     """Gets the average value in the list over the last number of hours"""
     number_observations = hours * 2  # TODO: assert that read interval is 30m
@@ -52,6 +65,7 @@ def get_rolling_average(list_of_30m_observations, hours):
         trimmed_list = [float(l) for l in trimmed_list]
         return numpy.mean(trimmed_list)
 
+@log
 def get_std_dev(list_of_30m_observations, hours):
     """Gets the standard deviation of the list over the last number of hours"""
     number_observations = hours * 2  # TODO: assert that read interval is 30m
@@ -62,6 +76,7 @@ def get_std_dev(list_of_30m_observations, hours):
         trimmed_list = [float(l) for l in trimmed_list]
         return numpy.std(trimmed_list)
 
+@log
 def col_names():
     """Returns a string containing the names of the columns of the output file"""
     return "duration," + \
@@ -71,6 +86,7 @@ def col_names():
            "rel_humidity_stddev," + \
            "rain_mean"
 
+@log
 def line_item(duration):
     """Gets the values to write to the file"""
     return "%s,%s,%s,%s,%s,%s" % (
@@ -85,6 +101,7 @@ def line_item(duration):
 durations = (72, 48, 24, 12, 6)
 
 # r = requests.get(r'http://www.bom.gov.au/fwo/IDQ60801/IDQ60801.94294.json')
+logger.debug("url  = %s" % args.gauge_url)
 r = requests.get(parse_url(args.gauge_url))
 data_list= r.json()['observations']['data']
 
