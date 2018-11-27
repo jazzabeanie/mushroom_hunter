@@ -36,7 +36,7 @@ logger.debug("======")
 def log(func):
     """Adds debugging log information"""
     def wrapper(*args, **kwargs):
-        logger.debug("calling %s" % func.__name__)
+        logger.debug(f"calling {func.__name__}(args={args}, kwargs={kwargs})")
         return func(*args, **kwargs)
     return wrapper
 
@@ -54,7 +54,6 @@ def parse_url(url):
         raise AttributeError("This tool only takes a url to a BOM weather observations page, for example http://www.bom.gov.au/products/IDQ60801/IDQ60801.94294.shtml")
 
 
-# @log
 def get_rolling_average(list_of_30m_observations, hours):
     """Gets the average value in the list over the last number of hours"""
     number_observations = hours * 2  # TODO: assert that read interval is 30m
@@ -65,7 +64,6 @@ def get_rolling_average(list_of_30m_observations, hours):
         trimmed_list = [float(l) for l in trimmed_list]
         return numpy.mean(trimmed_list)
 
-@log
 def get_std_dev(list_of_30m_observations, hours):
     """Gets the standard deviation of the list over the last number of hours"""
     number_observations = hours * 2  # TODO: assert that read interval is 30m
