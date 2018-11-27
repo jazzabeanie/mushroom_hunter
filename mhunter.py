@@ -84,57 +84,81 @@ def col_names():
            "rel_humidity_stddev," + \
            "rain_mean"
 
-@log
-def line_item(duration):
-    """Gets the values to write to the file"""
-    return "%s,%s,%s,%s,%s,%s" % (
-        duration,
-        get_rolling_average(temp_observations, duration),
-        get_std_dev(temp_observations, duration),
-        get_rolling_average(humidity_observations, duration),
-        get_std_dev(humidity_observations, duration),
-        get_rolling_average(rain_observations, duration)
-    )
-
-durations = (72, 48, 24, 12, 6)
-
-# r = requests.get(r'http://www.bom.gov.au/fwo/IDQ60801/IDQ60801.94294.json')
-logger.debug("url  = %s" % args.gauge_url)
-r = requests.get(parse_url(args.gauge_url))
-data_list= r.json()['observations']['data']
-
-assert len(data_list)>=max(durations)*2, "Analysis is asking for a number of data points (%s) that is longer than the available data (%s)" % (
-        max(durations)*2,
-        len(data_list)
-    )
 
 
-if args.verbose:
-    print("")
-    print("gauge_url = %s" % "TODO")
-    gauge_name = data_list[0]['name']
-    print("gauge_name = %s" % gauge_name)
-    # most recent temperature observation
-    print("Temperature = %s at %s" % (data_list[0]['air_temp'], data_list[0]['local_date_time']))
-    print("")
+class Station:
+    def __init__(self, url):
+        self._url = url
+        self._request = requests.get(parse_url(url))
+        self._data_list= self._request.json()['observations']['data']
+        self._durations = (72, 48, 24, 12, 6)
+        assert len(self._data_list)>=max(self._durations)*2, "Analysis is asking for a number of data points (%s) that is longer than the available data (%s)" % (
+                max(self._durations)*2,
+                len(self._data_list)
+            )
+        self._temp_observations = [observation['air_temp'] for observation in self._data_list]
+        self._humidity_observations = [observation['rel_hum'] for observation in self._data_list]
+        self._rain_observations = [observation['rain_trace'] for observation in self._data_list]
 
-temp_observations = [observation['air_temp'] for observation in data_list]
-humidity_observations = [observation['rel_hum'] for observation in data_list]
-rain_observations = [observation['rain_trace'] for observation in data_list]
+    @property
+    def url(self):
+        return self._url
 
-if args.output:
-    # print("writing to %s" % args.output)
-    with open(args.output, 'w') as file:
-        file.write(col_names() + "\n")
-        for duration in durations:
-            file.write(line_item(duration) + "\n")
-else:
-    print(col_names())
-    for duration in durations:
-        print(line_item(duration))
+    @property
+    def durations(self):
+        return self._durations
+
+    @property
+    def recent_humidity(self):
+        return self._data_list[0]['rel_hum']
+
+    @property
+    def recent_temp(self):
+        return self._data_list[0]['air_temp']
+
+    @property
+    def recent_time(self):
+        return self._data_list[0]['local_date_time']
+
+    @property
+    def gauge_name(self):
+        return self._data_list[0]['name']
+
+    @log
+    def line_item(self, duration):
+        """Gets the values to write to the file"""
+        return "%s,%s,%s,%s,%s,%s" % (
+            duration,
+            get_rolling_average(self._temp_observations, duration),
+            get_std_dev(self._temp_observations, duration),
+            get_rolling_average(self._humidity_observations, duration),
+            get_std_dev(self._humidity_observations, duration),
+            get_rolling_average(self._rain_observations, duration)
+        )
 
 
-# for column in data_list[0]:
-#     print(column)
+if __name__ == "__main__":
+    reading = Station(args.gauge_url)
+
+
+    if args.verbose:
+        print("")
+        print(f"gauge_url = {reading.url}")
+        print(f"gauge_name = {reading.gauge_name}")
+        print(f"As of {reading.recent_time}:")
+        print(f"  temp: {reading.recent_temp}")
+        print(f"  humidity: {reading.recent_humidity}")
+        print("")
+
+    if args.output:
+        logger.debug("writing table to %s" % args.output)
+        with open(args.output, 'w') as file:
+            file.write(col_names() + "\n")
+            for duration in reading.durations:
+                file.write(reading.line_item(duration) + "\n")
+    else:
+        print(col_names())
+        for duration in reading.durations:
+            print(reading.line_item(duration))
 
 
