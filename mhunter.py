@@ -54,26 +54,6 @@ def parse_url(url):
         raise AttributeError("This tool only takes a url to a BOM weather observations page, for example http://www.bom.gov.au/products/IDQ60801/IDQ60801.94294.shtml")
 
 
-def get_rolling_average(list_of_30m_observations, hours):
-    """Gets the average value in the list over the last number of hours"""
-    number_observations = hours * 2  # TODO: assert that read interval is 30m
-    trimmed_list = list_of_30m_observations[:number_observations]
-    try:
-        return numpy.mean(trimmed_list)
-    except TypeError as e:
-        trimmed_list = [float(l) for l in trimmed_list]
-        return numpy.mean(trimmed_list)
-
-def get_std_dev(list_of_30m_observations, hours):
-    """Gets the standard deviation of the list over the last number of hours"""
-    number_observations = hours * 2  # TODO: assert that read interval is 30m
-    trimmed_list = list_of_30m_observations[:number_observations]
-    try:
-        return numpy.std(trimmed_list)
-    except TypeError as e:
-        trimmed_list = [float(l) for l in trimmed_list]
-        return numpy.std(trimmed_list)
-
 @log
 def col_names():
     """Returns a string containing the names of the columns of the output file"""
@@ -82,7 +62,7 @@ def col_names():
            "temp_stddev," + \
            "rel_humidity_mean," + \
            "rel_humidity_stddev," + \
-           "rain_mean"
+           "rain_total"
 
 
 
@@ -99,6 +79,51 @@ class Station:
         self._temp_observations = [observation['air_temp'] for observation in self._data_list]
         self._humidity_observations = [observation['rel_hum'] for observation in self._data_list]
         self._rain_observations = [observation['rain_trace'] for observation in self._data_list]
+
+    def _get_rolling_average(self, list_of_30m_observations, hours):
+        """Gets the average value in the list over the last number of hours"""
+        number_observations = hours * 2  # TODO: assert that read interval is 30m
+        trimmed_list = list_of_30m_observations[:number_observations]
+        try:
+            return numpy.mean(trimmed_list)
+        except TypeError as e:
+            trimmed_list = [float(l) for l in trimmed_list]
+            return numpy.mean(trimmed_list)
+
+    def _get_std_dev(self, list_of_30m_observations, hours):
+        """Gets the standard deviation of the list over the last number of hours"""
+        number_observations = hours * 2  # TODO: assert that read interval is 30m
+        trimmed_list = list_of_30m_observations[:number_observations]
+        try:
+            return numpy.std(trimmed_list)
+        except TypeError as e:
+            trimmed_list = [float(l) for l in trimmed_list]
+            return numpy.std(trimmed_list)
+
+    def _get_total_rain(self, hours):
+        """Gets the total rainfall over the duration passed in as an argument"""
+        number_observations = hours * 2
+        values_only = list(filter(lambda x: x != '-', self._rain_observations))
+        rain_since_last_reading = self._cumulative_to_distinct(values_only)
+        value_over_duration = sum(rain_since_last_reading[0:number_observations])
+        return value_over_duration
+
+    def _cumulative_to_distinct(self, cumulative_list):
+        """changes the rain readings to be the amount of rain since the last reading instead of since 9am"""
+        distinct_list = []
+        for i in range(len(cumulative_list)):
+            if i==len(cumulative_list)-1:
+                break
+            new = float(cumulative_list[i])
+            old = float(cumulative_list[i+1])
+            if old>new:
+                # TODO: assert time is 9:30am if readings are in 30 minute
+                # intervals
+                distinct_list.append(new)
+            else:
+                distinct_list.append(new-old)
+        return distinct_list
+
 
     @property
     def url(self):
@@ -129,11 +154,11 @@ class Station:
         """Gets the values to write to the file"""
         return "%s,%s,%s,%s,%s,%s" % (
             duration,
-            get_rolling_average(self._temp_observations, duration),
-            get_std_dev(self._temp_observations, duration),
-            get_rolling_average(self._humidity_observations, duration),
-            get_std_dev(self._humidity_observations, duration),
-            get_rolling_average(self._rain_observations, duration)
+            self._get_rolling_average(self._temp_observations, duration),
+            self._get_std_dev(self._temp_observations, duration),
+            self._get_rolling_average(self._humidity_observations, duration),
+            self._get_std_dev(self._humidity_observations, duration),
+            self._get_total_rain(duration)
         )
 
 
