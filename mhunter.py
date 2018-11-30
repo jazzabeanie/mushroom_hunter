@@ -36,7 +36,7 @@ logger.debug("======")
 def log(func):
     """Adds debugging log information"""
     def wrapper(*args, **kwargs):
-        logger.debug(f"calling {func.__name__}(args={args}, kwargs={kwargs})")
+        logger.debug(f"""calling {func.__name__}(args={args}, kwargs={kwargs})""")
         return func(*args, **kwargs)
     return wrapper
 
@@ -76,7 +76,6 @@ class Station:
                 max(self._durations)*2,
                 len(self._data_list)
             )
-        self._temp_observations = [observation['air_temp'] for observation in self._data_list]
         self._humidity_observations = [observation['rel_hum'] for observation in self._data_list]
         self._rain_observations = [observation['rain_trace'] for observation in self._data_list]
 
@@ -124,6 +123,15 @@ class Station:
                 distinct_list.append(new-old)
         return distinct_list
 
+    def graph(self, observations, interval):
+        import plotly.offline as py
+        import plotly.graph_objs as go
+        trace = go.Scatter(
+            x = list(range(0, len(observations)*interval, interval)),
+            y = observations
+        )
+        data = [trace]
+        py.plot(data, filename='temperature_graph')
 
     @property
     def url(self):
@@ -149,13 +157,17 @@ class Station:
     def gauge_name(self):
         return self._data_list[0]['name']
 
+    @property
+    def temp_observations(self):
+        return [observation['air_temp'] for observation in self._data_list]
+
     @log
     def line_item(self, duration):
         """Gets the values to write to the file"""
         return "%s,%s,%s,%s,%s,%s" % (
             duration,
-            self._get_rolling_average(self._temp_observations, duration),
-            self._get_std_dev(self._temp_observations, duration),
+            self._get_rolling_average(self.temp_observations, duration),
+            self._get_std_dev(self.temp_observations, duration),
             self._get_rolling_average(self._humidity_observations, duration),
             self._get_std_dev(self._humidity_observations, duration),
             self._get_total_rain(duration)
