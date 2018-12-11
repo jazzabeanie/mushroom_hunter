@@ -76,8 +76,8 @@ class Station:
                 max(self._durations)*2,
                 len(self._data_list)
             )
-        self._humidity_observations = [observation['rel_hum'] for observation in self._data_list]
-        self._rain_observations = [observation['rain_trace'] for observation in self._data_list]
+        self._humidity_observations = [observation['rel_hum'] for observation in self._data_list] # TODO: convert to @property
+        self._rain_observations = [observation['rain_trace'] for observation in self._data_list] # TODO: convert to @property
 
     def _get_rolling_average(self, list_of_30m_observations, hours):
         """Gets the average value in the list over the last number of hours"""
@@ -128,10 +128,10 @@ class Station:
         import plotly.graph_objs as go
         trace = go.Scatter(
             x = list(range(0, len(observations)*interval, interval)),
-            y = observations
+            y = list(reversed(observations))
         )
         data = [trace]
-        py.plot(data, filename='temperature_graph')
+        py.plot(data, filename='temperature_graph.html')
 
     @property
     def url(self):
