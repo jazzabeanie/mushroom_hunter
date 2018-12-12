@@ -4,20 +4,6 @@ import argparse
 import numpy
 from re import search, sub
 
-parser = argparse.ArgumentParser(description="Analyses recent BOM data to determine whether it's a good time to forrage for mushrooms.")
-# mandatory arguments:
-parser.add_argument("gauge_url", help="The itentifier for the BOM observation gauge you want to querry. The tool will put it into this urL: http://www.bom.gov.au/products/IDQ60801/IDQ60801.GAUGE.shtml ")
-# optional arguments:
-parser.add_argument("-o",
-                    "--output",
-                    action="store",
-                    help="specifies output to write the results to. If not provided, results will be written to std out")
-parser.add_argument("-v",
-                    "--verbose",
-                    action="store_true",
-                    help="adds additional information to the output.")
-args = parser.parse_args()
-
 # TODO: think about security if I expose this publically. -- Bobby Tables
 
 logger = logging.getLogger('mhunter')
@@ -142,6 +128,10 @@ class Station:
         return self._durations
 
     @property
+    def data_list(self):
+        return self._data_list
+
+    @property
     def recent_humidity(self):
         return self._data_list[0]['rel_hum']
 
@@ -175,6 +165,20 @@ class Station:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Analyses recent BOM data to determine whether it's a good time to forrage for mushrooms.")
+    # mandatory arguments:
+    parser.add_argument("gauge_url", help="The itentifier for the BOM observation gauge you want to querry. The tool will put it into this urL: http://www.bom.gov.au/products/IDQ60801/IDQ60801.GAUGE.shtml ")
+    # optional arguments:
+    parser.add_argument("-o",
+                        "--output",
+                        action="store",
+                        help="specifies output to write the results to. If not provided, results will be written to std out")
+    parser.add_argument("-v",
+                        "--verbose",
+                        action="store_true",
+                        help="adds additional information to the output.")
+    args = parser.parse_args()
+
     reading = Station(args.gauge_url)
 
 
