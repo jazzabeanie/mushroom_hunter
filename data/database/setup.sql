@@ -16,7 +16,7 @@
 --   feels_like real,
 --   cloud varchar(32),
 --   cloud_base_m int,
---   clout_oktas int,
+--   cloud_oktas int,
 --   cloud_type varchar(32),
 --   cloud_type_id int,
 --   delta_t real, -- https://en.wikipedia.org/wiki/Wet-bulb_temperature#Wet-bulb_depression
@@ -43,7 +43,7 @@ CREATE TABLE Townsville (
   apparent_t real,
   cloud varchar(32),
   cloud_base_m int,
-  clout_oktas int,
+  cloud_oktas int,
   cloud_type varchar(32),
   cloud_type_id int,
   delta_t real,
