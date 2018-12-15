@@ -8,7 +8,7 @@ from re import search, sub
 
 logger = logging.getLogger('mhunter')
 logger.setLevel(logging.DEBUG)
-file_handler = logging.FileHandler('log.log')
+file_handler = logging.FileHandler('mhunter.log')
 file_handler.setLevel(logging.DEBUG)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
@@ -130,6 +130,10 @@ class Station:
     @property
     def data_list(self):
         return self._data_list
+
+    @property
+    def dates(self):
+       return [e['local_date_time_full'] for e in self.data_list]
 
     @property
     def recent_humidity(self):

@@ -1,7 +1,8 @@
 sample*
 results.csv
-log.log
+mhunter.log
 the_problem.md
 *.html
 postgresql-10-A4.pdf
 data/ala/*
+data_grabber.log
