@@ -58,7 +58,10 @@ class Station:
         self._request = requests.get(parse_url(url))
         self._data_list= self._request.json()['observations']['data']
         self._durations = (72, 48, 24, 12, 6)
-        # FIXME: this check is breaking my data_grabber.py tool.
+        # FIXME: this assertion is breaking my data_grabber.py tool. This assertion
+        # assumes 30 minutes observations, which isn't always the case. I
+        # believe it is here to stop an error being thrown when
+        # list_of_30m_observations[:number_observations] is out of range.
         assert len(self._data_list)>=max(self._durations)*2, "Analysis is asking for a number of data points (%s) that is longer than the available data (%s)" % (
                 max(self._durations)*2,
                 len(self._data_list)
@@ -66,7 +69,12 @@ class Station:
         self._humidity_observations = [observation['rel_hum'] for observation in self._data_list] # TODO: convert to @property
         self._rain_observations = [observation['rain_trace'] for observation in self._data_list] # TODO: convert to @property
 
-    # FIXME: interval between observations isn't always 30 mintues
+    # FIXME: interval between observations isn't always 30 mintues. refactor
+    # all this code. But first consider:
+        # should this analysis be performed on this data, or on my own
+        # database? As long as I run the data_grabber first, my database will
+        # always have at least as much data BOMs.
+
     def _get_rolling_average(self, list_of_30m_observations, hours):
         """Gets the average value in the list over the last number of hours"""
         number_observations = hours * 2  # TODO: assert that read interval is 30m
