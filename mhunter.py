@@ -57,6 +57,14 @@ class Station:
         self._url = url
         self._request = requests.get(parse_url(url))
         self._data_list= self._request.json()['observations']['data']
+        if args.verbose:
+            import json
+            import pandas as pd
+            logger.debug("writing table to %s" % tmp_output)
+            tmp_output = r'/tmp/mhunter_output.csv'
+            df = pd.read_json(json.dumps(self._data_list))
+            df.to_csv(tmp_output)
+            print(f'data saved to {tmp_output}')
         self._durations = (72, 48, 24, 12, 6)
         # FIXME: this assertion is breaking my data_grabber.py tool. This assertion
         # assumes 30 minutes observations, which isn't always the case. I
@@ -82,7 +90,7 @@ class Station:
         try:
             return numpy.mean(trimmed_list)
         except TypeError as e:
-            trimmed_list = [float(l) for l in trimmed_list]
+            trimmed_list = [float(l if l is not None else 0) for l in trimmed_list] # TODO: check that this is correct logic
             return numpy.mean(trimmed_list)
 
     def _get_std_dev(self, list_of_30m_observations, hours):
@@ -92,7 +100,7 @@ class Station:
         try:
             return numpy.std(trimmed_list)
         except TypeError as e:
-            trimmed_list = [float(l) for l in trimmed_list]
+            trimmed_list = [float(l if l is not None else 0) for l in trimmed_list] # TODO: check that this is correct logic
             return numpy.std(trimmed_list)
 
     def _get_total_rain(self, hours):
@@ -190,7 +198,7 @@ if __name__ == "__main__":
     parser.add_argument("-v",
                         "--verbose",
                         action="store_true",
-                        help="adds additional information to the output.")
+                        help="Adds additional information to the output. Also writes the raw data to /tmp/ folder")
     args = parser.parse_args()
 
     reading = Station(args.gauge_url)
